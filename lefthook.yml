@@ -1,0 +1,31 @@
+# src: lefthook.yml
+## @(#) : lefthook config
+#
+# @version  1.0.1
+# @date     2025-04-25
+# @author   Furukawa, Atsushi <atsushifx@gmail.com>
+# @license  MIT
+#
+# @description<<
+#
+# Git hook configuration powered by Lefthook.
+# Ensures commit hygiene with secret scanning and commit message linting.
+#
+#<<
+
+pre-commit:
+  parallel: true
+  commands:
+    gitleaks:
+      run: gitleaks protect --staged
+
+    secretlint:
+      glob: "**/*"
+      run: >
+        secretlint --maskSecrets --secretlintignore .gitignore "{staged_files}"
+
+commit-msg:
+  parallel: true
+  commands:
+    commitlint:
+      run: commitlint -e
