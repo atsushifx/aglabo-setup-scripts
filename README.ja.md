@@ -1,33 +1,70 @@
 ---
-title: ".github 共通テンプレート・CI設定"
-date: 2025-04-25
+title: ".github Setup Scripts"
+date: 2025-04-26
 draft: false
 ---
 
-# 🛠 `.github` 共通テンプレート・CI構成
+## 🛠 `.github` setup scripts
 
-**この `.github` リポジトリは、atsushifx 自身が OSS プロジェクトで実際に運用している共通設定です。**
+**このリポジトリは、OSS プロジェクトで利用するための、開発環境構築用スクリプトを集約したものです。**
 
-このリポジトリは、Issue・PR 用のテンプレート、Lint や機密チェック用 CI ワークフローなど、プロジェクト全体で再利用可能な `.github` 設定を集約したものです。
+Windows で開発を始めるにあたり必要な環境を、安全に、簡単に構築するためのスクリプトセットを提供します。
 
-## 📦 含まれる機能
+### 📦 含まれる機能
 
-- ✅ Issue テンプレート (バグ報告、機能提案、自由トピック)
-- ✅ PR テンプレート (チェックリスト＋概要欄)
-- ✅ Gitleaks による CI 機密スキャン
-- ✅ Markdown, cspell, Vale 等のスタイル構成
+- ✅ Windows 環境の基盤設定スクリプト (Path 設定など)
+- ✅ 開発用ツールセット (scoop, volta, node.js, git)
+- ✅ ライター向けドキュメント編集ツール (textlint, markdownlint など)
 
-## 🚀 使用方法
+### 🚀 使用方法
 
-1. このリポジトリを Fork してプロジェクトの `.github/` に配置
-2. Issue テンプレート、PR テンプレートは自動適用されます
-3. `.github/workflows/` から CI 設定をプロジェクトに導入できます
+#### 1. このリポジトリを clone する
 
-## 📄 ライセンス
+```bash
+git clone https://github.com/atsushifx/.githiub.git
+cd .github
+```
+
+#### 2. セットアップ初期化スクリプトを実行する
+
+まず最初に、PowerShell 実行ポリシーの設定＆ファイルブロックの解除をします。
+
+```bash
+./scripts/iniScript.cmd
+```
+
+> ※ 初回のみ実行してください。
+>
+> - PowerShellの実行ポリシーを安全な範囲で変更します
+> - スクリプトファイルのブロック解除を行います
+> - `pwsh (PowerShell Core)` がない場合、自動で `powershell.exe` を使用します
+> - 必要に応じて、PowerShell 7+ のインストールを推奨しています
+
+#### 3. 必要なセットアップスクリプトを実行する
+
+- 開発環境を構築する
+
+```bash
+./scripts/setupDeveloperEnvironment.ps1
+```
+
+- （必要に応じて）開発者向け追加ツールをインストール
+
+```bash
+./scripts/install-DevTools.ps1
+```
+
+- （必要に応じて）ドキュメント作成ツールをインストール
+
+```bash
+./scripts/install-WritingTools.ps1
+```
+
+### 📄 ライセンス
 
 MIT © Atsushi Furukawa (@atsushifx)
 
-## 🙏 Thanks
+### 🙏 Thanks
 
 本リポジトリは、チャットボットアシスタントのサポートのもと作成・整備されました。
 
