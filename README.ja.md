@@ -14,7 +14,7 @@ Windows で開発を始めるにあたり必要な環境を、安全に、簡単
 
 - ✅ Windows 環境の基盤設定スクリプト (Path 設定など)
 - ✅ 開発用ツールセット (scoop, volta, node.js, git)
-- ✅ ライター向けドキュメント編集ツール (textlint, markdownlint など)
+- ✅ ライター向けドキュメント編集ツール (TextLint, MarkdownLint など)
 
 ### 🚀 使用方法
 
