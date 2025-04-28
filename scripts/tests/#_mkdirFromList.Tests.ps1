@@ -3,6 +3,7 @@
 #
 # Copyright (c) 2025 Furukawa Atsushi <atsushifx@gmail.com>
 # This software is released under the MIT License.
+#
 # https://opensource.org/licenses/MIT
 
 <#
@@ -17,7 +18,6 @@ mkdirFromList.Tests : ディレクトリ作成テスト
 # --- import
 . "$SCRIPTROOT/libs/pathUtils.ps1"
 # すぐ後に関数が定義されているか確認
-
 
 # --- テストメイン
 Describe "pathUtils: mkdirFromList (Dry-Run mode)" {
@@ -52,7 +52,6 @@ Describe "pathUtils: mkdirFromList (Dry-Run mode)" {
     Context "when creating directory from home path (Dry-Run)" {
         It "should resolve and return the correct home path without creating directory" {
             $result = "~/projects/myApp" | mkdirFromList -DryRun
-            Write-Host "Result: $result"
 
             # New-Itemは呼ばれていないことを確認
             Assert-MockCalled -CommandName New-Item -Times 0 -Exactly -Scope It
@@ -66,7 +65,7 @@ Describe "pathUtils: mkdirFromList (Dry-Run mode)" {
     Context "when creating directory from home path" {
         It "should resolve and return the correct home path with creating directory" {
             $result = "~/projects/myApp" | mkdirFromList
-            Write-Host "Result: $result"
+
 
             # New-Itemは呼ばれていないことを確認
             Assert-MockCalled -CommandName New-Item -Times 1 -Exactly -Scope It

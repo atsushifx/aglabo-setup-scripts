@@ -22,13 +22,8 @@ pre-commit:
     secretlint:
       glob: "**/*"
       run: >
-        secretlint --maskSecrets --secretlintignore .gitignore "{staged_files}"]
-        pre-commit:
+        secretlint --maskSecrets --secretlintignore .gitignore "{staged_files}"
 
-
-    pwsh-lint:
-      glob: "scripts/**/*.ps1"
-      run: pwsh -Command "if (Test-Path './scripts') { Invoke-ScriptAnalyzer -Path './scripts/**/*.ps1' -Recurse -Fix -Severity Warning,Error }"
 
 
 commit-msg:

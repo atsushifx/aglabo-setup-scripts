@@ -1,3 +1,19 @@
+# src: libs/agEnv.ps1
+# @(#) : agEnv : Environment Variable Manager
+#
+# Copyright (c) 2025 atsushifx <atsushifx@gmail.com>
+# This software is released under the MIT License.
+# https://opensource.org/licenses/MIT
+
+<#
+.SYNOPSIS
+agEnv : Static environment variable manager
+
+.DESCRIPTION
+Static class wrapping environment variable operations.
+Provides Set, Get, Remove functions using PowerShell.
+#>
+
 # モジュール共通内部ヘルパー: Create-DirectoryPath
 function local:createDirectoryWithCurrent {
     param(
