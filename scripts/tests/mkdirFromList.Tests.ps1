@@ -16,19 +16,16 @@ mkdirFromList.Tests : ディレクトリ作成テスト
 #>
 
 # --- import
-. "$SCRIPTROOT/libs/pathUtils.ps1"
 # すぐ後に関数が定義されているか確認
-
+BeforeAll {
+    . "$SCRIPTROOT/libs/pathUtils.ps1"
+}
 # --- テストメイン
 Describe "pathUtils: mkdirFromList (Dry-Run mode)" {
     # Mock Dir
     $script:mockCurrent = "C:\<Mock>\Current"
     $script:mockHome = "C:\<Mock>\Home"
     $script:originalHome = $env:USERPROFILE
-
-    BeforeAll {
-        . "$SCRIPTROOT/libs/pathUtils.ps1"
-    }
 
     BeforeEach {
         # 環境変数とGet-Locationのモック
