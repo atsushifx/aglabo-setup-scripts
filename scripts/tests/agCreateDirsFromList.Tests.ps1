@@ -1,5 +1,5 @@
-# src: scripts/tests/mkdirFromList.Tests.ps1
-# @(#) : mkdirFromList.Tests : ディレクトリ作成テスト
+# src: scripts/tests/agMkdir.Tests.ps1
+# @(#) : agMkdir.Tests : ディレクトリ作成テスト
 #
 # Copyright (c) 2025 Furukawa Atsushi <atsushifx@gmail.com>
 # This software is released under the MIT License.
@@ -8,7 +8,7 @@
 
 <#
 .SYNOPSIS
-mkdirFromList.Tests : ディレクトリ作成テスト
+agMkdir.Tests : ディレクトリ作成テスト
 
 .DESCRIPTION
 パイプ形式で読み込んだディレクトリが作成できるかのテスト
@@ -18,10 +18,10 @@ mkdirFromList.Tests : ディレクトリ作成テスト
 # --- import
 # すぐ後に関数が定義されているか確認
 BeforeAll {
-    . "$SCRIPTROOT/libs/pathUtils.ps1"
+    . "$SCRIPTROOT/libs/agCreateDirsFromList.ps1"
 }
 # --- テストメイン
-Describe "pathUtils: mkdirFromList (Dry-Run mode)" {
+Describe "agMkdir: (Dry-Run mode)" {
     # Mock Dir
     $script:mockCurrent = "C:\<Mock>\Current"
     $script:mockHome = "C:\<Mock>\Home"
@@ -48,7 +48,7 @@ Describe "pathUtils: mkdirFromList (Dry-Run mode)" {
 
     Context "when creating directory from home path (Dry-Run)" {
         It "should resolve and return the correct home path without creating directory" {
-            $result = "~/projects/myApp" | mkdirFromList -DryRun
+            $result = "~/projects/myApp" | agMkdir -DryRun
 
             # New-Itemは呼ばれていないことを確認
             Assert-MockCalled -CommandName New-Item -Times 0 -Exactly -Scope It
@@ -61,7 +61,7 @@ Describe "pathUtils: mkdirFromList (Dry-Run mode)" {
 
     Context "when creating directory from home path" {
         It "should resolve and return the correct home path with creating directory" {
-            $result = "~/projects/myApp" | mkdirFromList
+            $result = "~/projects/myApp" | agMkdir
 
 
             # New-Itemは呼ばれていないことを確認
@@ -75,7 +75,7 @@ Describe "pathUtils: mkdirFromList (Dry-Run mode)" {
 
     Context "when creating directory from relative path (Normal mode)" {
         It "should create directory under mocked current location" {
-            $result = "relativeDir" | mkdirFromList
+            $result = "relativeDir" | agMkdir
 
             # New-Itemが呼ばれたことを確認
             Assert-MockCalled -CommandName New-Item -Times 1 -Exactly -Scope It
@@ -88,7 +88,7 @@ Describe "pathUtils: mkdirFromList (Dry-Run mode)" {
 
     Context "when creating directory from absolute path (Normal mode)" {
         It "should create directory as is without changing base" {
-            $result = "C:\<Mock>\Absolute\dir" | mkdirFromList
+            $result = "C:\<Mock>\Absolute\dir" | agMkdir
 
             # New-Itemが呼ばれたことを確認
             Assert-MockCalled -CommandName New-Item -Times 1 -Exactly -Scope It
@@ -102,19 +102,19 @@ Describe "pathUtils: mkdirFromList (Dry-Run mode)" {
     ## Edge Case : null or space
     Context "when path is empty string" {
         It "should write error and skip creation" {
-            { "" | mkdirFromList } | Should -Throw
+            { "" | agMkdir } | Should -Throw
         }
     }
 
     Context "when path is whitespace only" {
         It "should write error and skip creation" {
-            { "   " | mkdirFromList } | Should -Throw
+            { "   " | agMkdir } | Should -Throw
         }
     }
 
     Context "when path has leading and trailing spaces" {
         It "should trim spaces and create directory correctly" {
-            $result = "  trimmedDir  " | mkdirFromList
+            $result = "  trimmedDir  " | agMkdir
 
             # New-Itemが呼ばれたことを確認
             Assert-MockCalled -CommandName New-Item -Times 1 -Exactly -Scope It
@@ -128,7 +128,7 @@ Describe "pathUtils: mkdirFromList (Dry-Run mode)" {
     ## Edge Case : i18n (CJK: Japanese, Korean, Chinese)
     Context "when creating directory with Japanese characters" {
         It "should create directory with Japanese name correctly" {
-            $result = "資料" | mkdirFromList
+            $result = "資料" | agMkdir
             Assert-MockCalled -CommandName New-Item -Times 1 -Exactly -Scope It
 
             $expected = "C:\<Mock>\Current\資料"
@@ -138,7 +138,7 @@ Describe "pathUtils: mkdirFromList (Dry-Run mode)" {
 
     Context "when creating directory with Japanese name and full-width space" {
         It "should create directory with full-width space in name" {
-            $result = "新規　フォルダ" | mkdirFromList
+            $result = "新規　フォルダ" | agMkdir
             Assert-MockCalled -CommandName New-Item -Times 1 -Exactly -Scope It
 
             $expected = "C:\<Mock>\Current\新規　フォルダ"
@@ -148,7 +148,7 @@ Describe "pathUtils: mkdirFromList (Dry-Run mode)" {
 
     Context "when creating directory with Korean or Chinese characters" {
         It "should create directory with multi-byte name correctly" {
-            $result = "데이터" | mkdirFromList
+            $result = "데이터" | agMkdir
             Assert-MockCalled -CommandName New-Item -Times 1 -Exactly -Scope It
 
             $expected = "C:\<Mock>\Current\데이터"
@@ -159,25 +159,25 @@ Describe "pathUtils: mkdirFromList (Dry-Run mode)" {
     ## Edge Case : illegal characters
     Context "when path is composed only of forbidden characters" {
         It "should throw error for only backslash" {
-            { "\" | mkdirFromList } | Should -Throw
+            { "\" | agMkdir } | Should -Throw
         }
         It "should throw error for only slash" {
-            { "/" | mkdirFromList } | Should -Throw
+            { "/" | agMkdir } | Should -Throw
         }
         It "should throw error for only asterisk" {
-            { "*" | mkdirFromList } | Should -Throw
+            { "*" | agMkdir } | Should -Throw
         }
         It "should throw error for only question mark" {
-            { "?" | mkdirFromList } | Should -Throw
+            { "?" | agMkdir } | Should -Throw
         }
         It "should throw error for only less than" {
-            { "<" | mkdirFromList } | Should -Throw
+            { "<" | agMkdir } | Should -Throw
         }
         It "should throw error for only greater than" {
-            { ">" | mkdirFromList } | Should -Throw
+            { ">" | agMkdir } | Should -Throw
         }
         It "should throw error for only pipe" {
-            { "|" | mkdirFromList } | Should -Throw
+            { "|" | agMkdir } | Should -Throw
         }
     }
 
@@ -185,7 +185,7 @@ Describe "pathUtils: mkdirFromList (Dry-Run mode)" {
     Context "when creating multiple directories" {
         It "should create all directories from list" {
             $dirs = @("dir1", "dir2", "dir3")
-            $results = $dirs | mkdirFromList
+            $results = $dirs | agMkdir
 
             # New-ItemのMockで記録されたパスリストと比較
             $expectedPaths = @(

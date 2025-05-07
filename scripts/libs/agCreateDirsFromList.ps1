@@ -49,7 +49,7 @@ function local:createDirectoryWithCurrent {
 }
 
 # パイプ入力対応メイン関数: mkdirFromList
-function mkdirFromList {
+function agMkdir {
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
