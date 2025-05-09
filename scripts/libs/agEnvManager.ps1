@@ -5,6 +5,8 @@
 # Released under the MIT License
 # https://opensource.org/licenses/MIT
 
+Set-StrictMode -version latest
+
 # ─────────────────────────────────────
 # Enum: AgEnvScope
 # ─────────────────────────────────────
@@ -121,6 +123,7 @@ The scope where the variable is set (default: USER).
 Switch to disable process environment synchronization.
 #>
 function agSetEnv {
+    [OutputType([string])]
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
@@ -154,6 +157,7 @@ The scope from which to retrieve (default: CURRENT).
 The value of the environment variable or $null if not found.
 #>
 function agGetEnv {
+    [OutputType([string])]
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
