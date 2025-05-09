@@ -13,8 +13,6 @@ agEnv : Static environment variable manager
 Static class wrapping environment variable operations.
 Provides Set, Get, Remove functions using PowerShell.
 #>
-
-# モジュール共通内部ヘルパー: Create-DirectoryPath
 function local:createDirectoryWithCurrent {
     param(
         [string]$Path,
@@ -49,12 +47,11 @@ function local:createDirectoryWithCurrent {
 }
 
 # パイプ入力対応メイン関数: mkdirFromList
-function agMkdir {
+function agCreateDirs {
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
         [string[]]$PathList,
-
         [switch]$DryRun
     )
     begin {
