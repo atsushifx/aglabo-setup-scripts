@@ -18,16 +18,13 @@ enum AgEnvScope {
     SYSTEM = [System.EnvironmentVariableTarget]::Machine
 }
 
-# ─────────────────────────────────────
-# Class: AgEnv (Internal Helper)
-# ─────────────────────────────────────
 <#
 .SUMMARY
 Internal static helper class for environment variable operations.
 Provides protection against critical environment variable modification.
 #>
-class AgEnv {
-    static [string[]]$ProtectedKeys = @(
+class _AgEnvManager {
+    static [string[]]$_protectedKeys = @(
         "Path",
         "PathExt",
         "PSModulePath",
@@ -37,11 +34,38 @@ class AgEnv {
 
     <#
     .SUMMARY
-    Sets an environment variable internally without validation.
+    Sets an environment variable internally
     #>
-    static [void] _setEnv([string]$Name, [string]$Value, [AgEnvScope]$Scope = [AgEnvScope]::CURRENT) {
+    static [void] _setEnvScoped([string]$Name, [string]$Value, [AgEnvScope]$Scope = [AgEnvScope]::CURRENT) {
         [Environment]::SetEnvironmentVariable($Name, $Value, $Scope)
     }
+
+    <#
+    .SUMMARY
+    Sets an environment variable internally.
+    #>
+    static [void] _setEnv(
+        [string]$Name,
+        [string]$Value,
+        [AgEnvScope]$Scope,
+        [bool]$NoSync = $false
+    ) {
+        $Name = $Name.Trim()
+        $Value = $Value.Trim()
+
+        if ([string]::IsNullOrWhiteSpace($Name)) {
+            throw [System.ArgumentException]::new("Environment variable name cannot be empty or whitespace.")
+        }
+
+        if ([_AgEnvManager]::_isProtected($Name)) {
+            throw [System.InvalidOperationException]::new("Modification of protected variable '$Name' is not allowed.")
+        }
+        [_AgEnvManager]::_setEnvScoped($Name, $Value, $Scope)
+        if (-not $NoSync -and $Scope -ne [AgEnvScope]::CURRENT) {
+            [_AgEnvManager]::_setEnvScoped($Name, $Value, [AgEnvScope]::CURRENT)
+        }
+    }
+
 
     <#
     .SUMMARY
@@ -55,22 +79,34 @@ class AgEnv {
     .SUMMARY
     Removes an environment variable internally.
     #>
-    static [void] _removeEnv([string]$Name, [AgEnvScope]$Scope = [AgEnvScope]::CURRENT) {
-        [Environment]::SetEnvironmentVariable($Name, $null, $Scope)
+    static [void] _removeEnv([string]$Name, [AgEnvScope]$Scope = [AgEnvScope]::CURRENT, [bool]$NoSync = $false) {
+        $Name = $Name.Trim()
+
+        if ([string]::IsNullOrWhiteSpace($Name)) {
+            throw [System.ArgumentException]::new("Environment variable name cannot be empty or whitespace.")
+        }
+
+        if ([_AgEnvManager]::_isProtected($Name)) {
+            throw [System.InvalidOperationException]::new("Modification of protected variable '$Name' is not allowed.")
+        }
+        [_AgEnvManager]::_setEnvScoped($Name, $null, $Scope)
+        if (-not $NoSync -and $Scope -ne [AgEnvScope]::CURRENT) {
+            [_AgEnvManager]::_setEnvScoped($Name, $null, [AgEnvScope]::CURRENT)
+        }
     }
 
     <#
     .SUMMARY
     Determines if the given environment variable name is protected.
     #>
-    static [Boolean] isProtected([string]$Name) {
-        $upperKeys = [AgEnv]::ProtectedKeys | ForEach-Object { $_.ToUpperInvariant() }
+    static [Boolean] _isProtected([string]$Name) {
+        $upperKeys = [_AgEnvManager]::_protectedKeys | ForEach-Object { $_.ToUpperInvariant() }
         return ($upperKeys -contains ($Name.ToUpperInvariant()))
     }
 }
 
 # ─────────────────────────────────────
-# Function: agSetEnv
+# 外部公開用関数
 # ─────────────────────────────────────
 <#
 .SUMMARY
@@ -101,20 +137,7 @@ function agSetEnv {
 
     $Name = $Name.Trim()
     $Value = $Value.Trim()
-
-    if ([string]::IsNullOrWhiteSpace($Name)) {
-        throw [System.ArgumentException]::new("Environment variable name cannot be empty or whitespace.")
-    }
-
-    if ([AgEnv]::isProtected($Name)) {
-        throw [System.InvalidOperationException]::new("Setting of protected variable '$Name' is not allowed.")
-    }
-
-    [AgEnv]::_setEnv($Name, $Value, $Scope)
-
-    if (-not $NoSync -and $Scope -ne [AgEnvScope]::CURRENT) {
-        [AgEnv]::_setEnv($Name, $Value, [AgEnvScope]::CURRENT)
-    }
+    [_AgEnvManager]::_setEnv($Name, $Value, $Scope, $NoSync)
 }
 
 # ─────────────────────────────────────
@@ -146,7 +169,7 @@ function agGetEnv {
         throw [System.ArgumentException]::new("Environment variable name cannot be empty or whitespace.")
     }
 
-    return [AgEnv]::_getEnv($Name, $Scope)
+    return [_AgEnvManager]::_getEnv($Name, $Scope)
 }
 
 # ─────────────────────────────────────
@@ -173,69 +196,6 @@ function agRemoveEnv {
 
         [switch]$NoSync
     )
+    [_AgEnvManager]::_removeEnv($Name, $Scope, $NoSync)
 
-    $Name = $Name.Trim()
-
-    if ([string]::IsNullOrWhiteSpace($Name)) {
-        throw [System.ArgumentException]::new("Environment variable name cannot be empty or whitespace.")
-    }
-
-    if ([AgEnv]::isProtected($Name)) {
-        throw [System.InvalidOperationException]::new("Removal of protected variable '$Name' is not allowed.")
-    }
-
-    [AgEnv]::_removeEnv($Name, $Scope)
-
-    if (-not $NoSync -and $Scope -ne [AgEnvScope]::CURRENT) {
-        [AgEnv]::_removeEnv($Name, [AgEnvScope]::CURRENT)
-    }
-}
-
-# ─────────────────────────────────────
-# Function: agSetEnvFromList
-# ─────────────────────────────────────
-<#
-.SUMMARY
-Sets multiple environment variables from a list.
-.PARAMETER Items
-A list of two-element arrays (VariableName, Value).
-.PARAMETER Scope
-The scope to apply (default: USER).
-.PARAMETER NoSync
-Switch to disable process environment synchronization.
-#>
-function agSetEnvFromList {
-    [CmdletBinding()]
-    param(
-        [Parameter(
-            Mandatory = $true,
-            ValueFromPipeline = $true
-        )]
-        [string[][]]$Items,
-
-        [Parameter()]
-        [AgEnvScope]$Scope = [AgEnvScope]::USER,
-
-        [switch]$NoSync
-    )
-
-    process {
-        foreach ($Item in $Items) {
-            if ($Item.Count -ge 2) {
-                $varName = $Item[0].Trim()
-                $varValue = $Item[1].Trim()
-
-                if ([string]::IsNullOrWhiteSpace($varName)) {
-                    throw [System.ArgumentException]::new("Environment variable name cannot be empty or whitespace.")
-                }
-
-                agSetEnv -Name $varName -Value $varValue -Scope $Scope -NoSync:$NoSync
-            }
-            else {
-                throw [System.ArgumentException]::new(
-                    "Each item must have exactly 2 elements: VariableName and Value."
-                )
-            }
-        }
-    }
 }

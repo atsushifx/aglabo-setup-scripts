@@ -16,17 +16,18 @@ Tests the functions in agEnv.ps1
     removeEnv: Removes an environment variable.
 #>
 BeforeAll {
-    $script = $SCRIPTROOT + '\libs\agEnv.ps1'
+    $script = $SCRIPTROOT + '\libs\agEnvManager.ps1'
     . $script
 }
-Describe "AgEnv script functions test (agSetEnv/agGetEnv/agRemoveEnv)" {
+
+Describe "AgEnvManager - 基本操作" {
 
     AfterEach {
         agRemoveEnv -Name "TEST_VAR" -Scope ([AgEnvScope]::CURRENT)
         agRemoveEnv -Name "TEST_USER_VAR" -Scope ([AgEnvScope]::USER)
     }
 
-    Context "Environment variable operations (Process scope)" {
+    Context "Process スコープでの set/get/remove" {
         It "should set and get a variable" {
             agSetEnv -Name "TEST_VAR" -Value "TestValue" -Scope ([AgEnvScope]::CURRENT)
             $result = agGetEnv -Name "TEST_VAR"
@@ -40,7 +41,7 @@ Describe "AgEnv script functions test (agSetEnv/agGetEnv/agRemoveEnv)" {
         }
     }
 
-    Context "Environment variable operations (User scope)" {
+    Context "User スコープでの set/get/remove" {
         It "should set and get a user scoped variable" {
             agSetEnv -Name "TEST_USER_VAR" -Value "UserValue" -Scope ([AgEnvScope]::USER)
             $result = agGetEnv -Name "TEST_USER_VAR" -Scope ([AgEnvScope]::USER)
@@ -55,26 +56,28 @@ Describe "AgEnv script functions test (agSetEnv/agGetEnv/agRemoveEnv)" {
     }
 }
 
-Describe "AgEnv protect Environment Variable tests" {
+Describe "AgEnvManager - 保護変数の制限" {
+
     BeforeEach {
-        $script:originalProtectedKeys = [AgEnv]::ProtectedKeys.Clone()
-        [AgEnv]::ProtectedKeys = $script:originalProtectedKeys + "<MOCK_ENV>"
+        $script:originalProtectedKeys = [_AgEnvManager]::_protectedKeys.Clone()
+        [_AgEnvManager]::_protectedKeys = $script:originalProtectedKeys + "MOCK_ENV"
     }
     AfterEach {
-        [AgEnv]::ProtectedKeys = $script:originalProtectedKeys
+        [_AgEnvManager]::_protectedKeys = $script:originalProtectedKeys
     }
 
-    Context "check isProtected return" {
+    Context "ProtectedKeys に対する拒否動作" {
         It "set illegal variable should throw" {
-            { agSetEnv -Name "<MOCK_Env>" -Value "SomeValue" -Scope ([AgEnvScope]::CURRENT) } | Should -Throw -ExceptionType ([System.InvalidOperationException])
+            { agSetEnv -Name "MOCK_Env" -Value "SomeValue" -Scope ([AgEnvScope]::CURRENT) } | Should -Throw -ExceptionType ([System.InvalidOperationException])
         }
         It "remove illegal variable should throw" {
-            { agRemoveEnv -Name "<MOCK_Env>" -Scope ([AgEnvScope]::CURRENT) } | Should -Throw -ExceptionType ([System.InvalidOperationException])
+            { agRemoveEnv -Name "MOCK_Env" -Scope ([AgEnvScope]::CURRENT) } | Should -Throw -ExceptionType ([System.InvalidOperationException])
         }
     }
 }
 
-Describe "AgEnv process sync tests" {
+Describe "AgEnvManager - スコープ同期（Process/User）" {
+
     BeforeEach {
         agRemoveEnv -Name "TEST_SYNC_VAR" -Scope ([AgEnvScope]::USER)
         Remove-Item Env:TEST_SYNC_VAR -ErrorAction SilentlyContinue
@@ -85,8 +88,17 @@ Describe "AgEnv process sync tests" {
         Remove-Item Env:TEST_SYNC_VAR -ErrorAction SilentlyContinue
     }
 
-    It "should set USER scoped variable and reflect into process env by default" {
-        agSetEnv -Name "TEST_SYNC_VAR" -Value "SyncedValue" -Scope ([AgEnvScope]::USER)
-        $env:TEST_SYNC_VAR | Should -BeExactly "SyncedValue"
+    Context "同期あり (NoSyncなし)" {
+        It "User scope に設定すると Process にも反映される" {
+            agSetEnv -Name "TEST_SYNC_VAR" -Value "SyncedValue" -Scope ([AgEnvScope]::USER)
+            $env:TEST_SYNC_VAR | Should -BeExactly "SyncedValue"
+        }
+    }
+
+    Context "同期なし (NoSync指定)" {
+        It "User scope に設定しても Process に反映されない" {
+            agSetEnv -Name "TEST_SYNC_VAR" -Value "SyncedValue" -Scope ([AgEnvScope]::USER) -NoSync
+            $env:TEST_SYNC_VAR | Should -BeNullOrEmpty
+        }
     }
 }
