@@ -18,9 +18,7 @@ BeforeAll {
 }
 
 Describe "agEnvCore - Raw操作" {
-
     Context "SetRaw メソッド" {
-
         Context "Process スコープに設定する場合" {
             BeforeEach {
                 $testVar   = '<UT_SetRaw_Process>'
@@ -129,7 +127,9 @@ Describe "agEnvCore - Set メソッド (Public API)" {
 
         It "Sync=true で User と Current に同時設定される" {
             $valueOn = 'SyncOnValue'
-            [_agEnvCore]::Set($testVar, $valueOn, [agEnvScope]::User, $true)
+            $result = [_agEnvCore]::Set($testVar, $valueOn, [agEnvScope]::User, $on)
+            $expected = "$testVar = $valueOn"
+            $result | Should -Be $expected
 
             # public Get で User スコープ確認
             [_agEnvCore]::Get($testVar, [agEnvScope]::User) | Should -Be $valueOn
@@ -140,7 +140,9 @@ Describe "agEnvCore - Set メソッド (Public API)" {
 
         It "Sync=false で User のみ設定され、Current には反映されない" {
             $valueOff = 'SyncOffValue'
-            [_agEnvCore]::Set($testVar, $valueOff, [agEnvScope]::User, $false)
+            $result =[_agEnvCore]::Set($testVar, $valueOff, [agEnvScope]::User, $off)
+            $expected = "$testVar = $valueOff"
+            $result | Should -Be $expected
 
             # public Get で User スコープ確認
             [_agEnvCore]::Get($testVar, [agEnvScope]::User) | Should -Be $valueOff

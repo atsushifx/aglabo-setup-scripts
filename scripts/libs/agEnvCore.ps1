@@ -21,11 +21,11 @@ enum agEnvScope {
 }
 
 # $On $ Off 設定
-if (Test-Path variable:On) {
-    Set-Variable -Name On -Scope Global -Option ReadOnly -Value $true
+if (!(Test-Path variable:on)) {
+    Set-Variable -Name on -Scope Global -Option ReadOnly -Value $true
 }
-if (Test-Path variable:Off) {
-    Set-Variable -Name Off -Scope Global -Option ReadOnly -Value $false
+if (!(Test-Path variable:off)) {
+    Set-Variable -Name off -Scope Global -Option ReadOnly -Value $false
 }
 
 <#
@@ -54,7 +54,7 @@ class _agEnvCore {
     .PARAMETER Sync
     If `$true` (default), also sets in Current (Process) when scope is not Current.
     #>
-    static [void] Set(
+    static [string] Set(
         [string] $Name,
         [string] $Value,
         [agEnvScope] $Scope = [agEnvScope]::User,
@@ -64,6 +64,7 @@ class _agEnvCore {
         if ($Sync -and ($Scope -ne [agEnvScope]::Current)) {
             [ _agEnvCore ]::_SetRaw($Name, $Value, [agEnvScope]::Current)
         }
+        return "$Name = $Value"
     }
     <#
     .SYNOPSIS
