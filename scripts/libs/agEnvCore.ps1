@@ -66,6 +66,7 @@ class _agEnvCore {
         }
         return "$Name = $Value"
     }
+
     <#
     .SYNOPSIS
     Retrieves an environment variable value (defaults to Current scope).
@@ -83,6 +84,34 @@ class _agEnvCore {
         [agEnvScope] $Scope = [agEnvScope]::Current
     ) {
         return [ _agEnvCore ]::_GetRaw($Name, $Scope)
+    }
+
+    <#
+    .SYNOPSIS
+    Removes an environment variable in the specified scope and optionally syncs to Current.
+    .DESCRIPTION
+    Uses `_RemoveRaw` to remove in the given User or Machine scope.
+    If `$Sync` is `$true` and scope is not Current, also removes in Current (Process).
+    .PARAMETER Name
+    The name of the environment variable to remove.
+    .PARAMETER Scope
+    The scope ([agEnvScope] enum) in which to remove the variable.
+    Defaults to [agEnvScope]::User.
+    .PARAMETER Sync
+    If `$true` (default), also removes in Current (Process) when scope is not Current.
+    .OUTPUTS
+    Returns the variable name that was removed.
+    #>
+    static [string] Remove(
+        [string]    $Name,
+        [agEnvScope] $Scope = [agEnvScope]::User,
+        [bool]       $Sync  = $true
+    ) {
+        [ _agEnvCore ]::_RemoveRaw($Name, $Scope)
+        if ($Sync -and $Scope -ne [agEnvScope]::Current) {
+            [ _agEnvCore ]::_RemoveRaw($Name, [agEnvScope]::Current)
+        }
+        return $Name
     }
 
     <#
@@ -174,7 +203,5 @@ class _agEnvCore {
             [System.EnvironmentVariableTarget]$Scope
         )
     }
+}
 
-
-
- }

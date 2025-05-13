@@ -152,3 +152,38 @@ Describe "agEnvCore - Set メソッド (Public API)" {
         }
     }
 }
+
+Describe "agEnvCore - Remove メソッド (Public API)" {
+
+    Context "Sync 動作" {
+        BeforeEach {
+            $testVar   = '<UT_Remove_Sync>'
+            $testValue = 'ToBeRemoved'
+            # User と Current 両方に設定
+            [_agEnvCore]::_SetRaw($testVar, $testValue, [agEnvScope]::User)
+            [_agEnvCore]::_SetRaw($testVar, $testValue, [agEnvScope]::Current)
+        }
+        AfterEach {
+            # 両スコープをクリーンアップ
+            [_agEnvCore]::_RemoveRaw($testVar, [agEnvScope]::User)
+            [_agEnvCore]::_RemoveRaw($testVar, [agEnvScope]::Current)
+        }
+
+        It "Sync=true で User と Current が同時に削除され、削除した名前を返す" {
+            $ret = [_agEnvCore]::Remove($testVar, [agEnvScope]::User, $true)
+            $ret | Should -Be $testVar
+
+            [_agEnvCore]::IsEnvExist($testVar, [agEnvScope]::User)    | Should -BeFalse
+            [_agEnvCore]::IsEnvExist($testVar, [agEnvScope]::Current) | Should -BeFalse
+        }
+
+        It "Sync=false で User のみ削除され、Current は残り、削除した名前を返す" {
+            $ret = [_agEnvCore]::Remove($testVar, [agEnvScope]::User, $false)
+            $ret | Should -Be $testVar
+
+            [_agEnvCore]::IsEnvExist($testVar, [agEnvScope]::User)    | Should -BeFalse
+            [_agEnvCore]::IsEnvExist($testVar, [agEnvScope]::Current) | Should -BeTrue
+        }
+    }
+}
+
