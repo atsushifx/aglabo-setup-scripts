@@ -2,7 +2,7 @@
 /**
  *
  * @version  1.0.0
- * @author   Furukawa, Atsushi <atsushifx@aglabo.com>
+ * @author   atsushix <https://github.com/AtsushiX>
  * @since    2025-02-27
  * @license  MIT
  *
@@ -13,24 +13,24 @@
  *<<
  */
 {
-	"$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/packages/cspell-types/cspell.schema.json",
-	"version": "0.2",
-	"import": [
-		"${env:XDG_CONFIG_HOME}/vscode/cspell.config.json"
-	],
-	"language": "en",
-	"caseSensitive": true,
-	"dictionaryDefinitions": [
-		{
-			"name": "project-dic",
-			"description": "dictionary for this project",
-			"path": "./cspell/dicts/project.dic",
-			"addWords": true,
-			"scope": "workspace"
-		}
-	],
-	"dictionaries": [
-		"user-dic",
-		"project-dic"
-	]
+  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/packages/cspell-types/cspell.schema.json",
+  "version": "0.2",
+  "import": [
+    "${env:XDG_CONFIG_HOME}/vscode/cspell.config.json"
+  ],
+  "language": "en",
+  "caseSensitive": true,
+  "dictionaryDefinitions": [
+    {
+      "name": "project-dic",
+      "description": "dictionary for this project",
+      "path": "./cspell/dicts/project.dic",
+      "addWords": true,
+      "scope": "workspace"
+    }
+  ],
+  "dictionaries": [
+    "user-dic",
+    "project-dic"
+  ]
 }
