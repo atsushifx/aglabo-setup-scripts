@@ -122,3 +122,24 @@ Describe "agEnvCore - Raw操作" {
         }
     }
 }
+
+Describe "agEnvCore - Get メソッド (Public API)" {
+
+    Context "正常系" {
+        BeforeEach {
+            $testVar   = '<UT_Get_Public>'
+            $testValue = 'PublicValue'
+            # _SetRaw で Current (Process) スコープに設定
+            [_agEnvCore]::_SetRaw($testVar, $testValue, [agEnvScope]::Current)
+        }
+        AfterEach {
+            # _RemoveRaw でクリーンアップ
+            [_agEnvCore]::_RemoveRaw($testVar, [agEnvScope]::Current)
+        }
+
+        It "Current alias を指定して取得できる" {
+            $result = [_agEnvCore]::Get($testVar, [agEnvScope]::Current)
+            $result | Should -Be $testValue
+        }
+    }
+}

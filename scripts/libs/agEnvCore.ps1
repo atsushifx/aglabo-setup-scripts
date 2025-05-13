@@ -34,6 +34,51 @@ Internal static helper class for environment variable operations.
 Provides protection against critical environment variable modification.
 #>
 class _agEnvCore {
+    # ----------------
+    # public method
+    # ----------------
+    <#
+    .SYNOPSIS
+    Retrieves an environment variable value (defaults to Current scope).
+    .DESCRIPTION
+    Wraps `_GetRaw`. If no scope is provided, uses `Current` (Process).
+    .PARAMETER Name
+    Name of the environment variable.
+    .PARAMETER Scope
+    Scope ([agEnvScope] enum) to retrieve from. Defaults to [agEnvScope]::Current.
+    .OUTPUTS
+    Returns the variable's value as a string, or $null/empty if not set.
+    #>
+    static [string] Get(
+        [string] $Name,
+        [agEnvScope] $Scope = [agEnvScope]::Current
+    ) {
+        return [ _agEnvCore ]::_GetRaw($Name, $Scope)
+    }
+
+    <#
+    .SYNOPSIS
+    Checks whether an environment variable exists and has a non-empty value
+    (defaults to Current scope).
+    .DESCRIPTION
+    Uses .NET API to get the raw value in the specified scope without validation,
+    then returns $true if that value is neither $null nor an empty string.
+    .PARAMETER Name
+    The name of the environment variable to check.
+    .PARAMETER Scope
+    The scope ([agEnvScope] enum) in which to check the variable.
+    Defaults to [agEnvScope]::Current (Process).
+    .OUTPUTS
+    Returns a boolean: $true if the variable exists with a non-empty value;
+    otherwise $false.
+    #>
+    static [bool] isEnvExist([string]$name, $scope = [agEnvScope]::Current) {
+        return [bool]([_agEnvCore]::_GetRaw($name, $scope))
+    }
+
+    # ----------------
+    # private method
+    # ----------------
     <#
     .SYNOPSIS
     Retrieves the raw value of an environment variable (defaults to Current scope).
@@ -101,23 +146,6 @@ class _agEnvCore {
         )
     }
 
-    <#
-    .SYNOPSIS
-    Checks whether an environment variable exists and has a non-empty value
-    (defaults to Current scope).
-    .DESCRIPTION
-    Uses .NET API to get the raw value in the specified scope without validation,
-    then returns $true if that value is neither $null nor an empty string.
-    .PARAMETER Name
-    The name of the environment variable to check.
-    .PARAMETER Scope
-    The scope ([agEnvScope] enum) in which to check the variable.
-    Defaults to [agEnvScope]::Current (Process).
-    .OUTPUTS
-    Returns a boolean: $true if the variable exists with a non-empty value;
-    otherwise $false.
-    #>
-    static [bool] isEnvExist([string]$name, $scope = [agEnvScope]::Current) {
-        return [bool]([_agEnvCore]::_GetRaw($name, $scope))
-    }
-}
+
+
+ }
