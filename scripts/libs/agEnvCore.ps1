@@ -48,6 +48,28 @@ class _agEnvCore {
     .OUTPUTS
     Returns the variable's value as a string, or $null if not set.
     #>
+    static [void] _SetRaw([string] $Name, [string] $Value, [agEnvScope] $Scope = [agEnvScope]::Current) {
+        [System.Environment]::SetEnvironmentVariable(
+            $Name,
+            $Value,
+            [System.EnvironmentVariableTarget]$Scope
+        )
+    }
+
+    <#
+    .SYNOPSIS
+    Retrieves the raw value of an environment variable (defaults to Current scope).
+    .DESCRIPTION
+    Uses .NET API to get the value in the specified scope without validation.
+    If no scope is provided, the Current (Process) scope is used.
+    .PARAMETER Name
+    The name of the environment variable to retrieve.
+    .PARAMETER Scope
+    The scope ([agEnvScope] enum) in which to look up the variable.
+    Defaults to [agEnvScope]::Current (Process).
+    .OUTPUTS
+    Returns the variable's value as a string, or $null if not set.
+    #>
     static [string] _GetRaw([string] $Name, [agEnvScope] $Scope = [agEnvScope]::Current) {
         return [System.Environment]::GetEnvironmentVariable(
             $Name,
@@ -57,7 +79,7 @@ class _agEnvCore {
 
     <#
     .SYNOPSIS
-    Removes the raw value of an environment variable (defaults to User scope).
+    Removes the raw value of an environment variable (defaults to Current scope).
     .DESCRIPTION
     Uses .NET API to set the variable to null in the specified scope without validation.
     .PARAMETER Name
