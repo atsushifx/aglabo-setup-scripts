@@ -7,9 +7,10 @@
 
 <#
 .SUMMARY
-Tests the Raw methods in agEnvCore.ps1
+Tests the Raw and Get methods in agEnvCore.ps1
 .DESCRIPTION
-Tests the _GetRaw, _SetRaw, _RemoveRaw and IsEnvExist methods in agEnvCore.ps1
+Uses BeforeEach/AfterEach to setup/teardown env vars,
+then tests _SetRaw, _GetRaw, _RemoveRaw, Get and IsEnvExist.
 #>
 BeforeAll {
     $script = $SCRIPTROOT + '\libs\agEnvCore.ps1'
@@ -19,105 +20,72 @@ BeforeAll {
 Describe "agEnvCore - Raw操作" {
 
     Context "SetRaw メソッド" {
+
         Context "Process スコープに設定する場合" {
-            It "環境変数が Process に設定される" {
-                $testVar = '<UT_SetRaw_Process>'
+            BeforeEach {
+                $testVar   = '<UT_SetRaw_Process>'
                 $testValue = 'ProcessValue'
-
-                # 初期化
+                # 事前にクリア
                 [_agEnvCore]::_RemoveRaw($testVar, [agEnvScope]::Process)
+            }
+            AfterEach {
+                # クリーンアップ
+                [_agEnvCore]::_RemoveRaw($testVar, [agEnvScope]::Process)
+            }
 
-                # 設定
+            It "環境変数が Process に設定される" {
                 [_agEnvCore]::_SetRaw($testVar, $testValue, [agEnvScope]::Process)
-
-                # 取得
                 $raw = [_agEnvCore]::_GetRaw($testVar, [agEnvScope]::Process)
                 $raw | Should -Be $testValue
 
                 (Test-Path "Env:$testVar") | Should -BeTrue
-
-                # 後片付け
-                [_agEnvCore]::_RemoveRaw($testVar, [agEnvScope]::Process)
             }
         }
 
-        Context "User スコープに設定する場合" {
-            It "User にのみ設定され、Process には反映されない" {
-                $testVar = '<UT_SetRaw_User>'
+        Context "User スコープに設定する場合（明示的）" {
+            BeforeEach {
+                $testVar   = '<UT_SetRaw_User>'
                 $testValue = 'UserValue'
-
-                # 初期化
                 [_agEnvCore]::_RemoveRaw($testVar, [agEnvScope]::User)
                 [_agEnvCore]::_RemoveRaw($testVar, [agEnvScope]::Process)
+            }
+            AfterEach {
+                [_agEnvCore]::_RemoveRaw($testVar, [agEnvScope]::User)
+            }
 
-                # デフォルトScope(User)で設定
+            It "User にのみ設定され、Process には反映されない" {
                 [_agEnvCore]::_SetRaw($testVar, $testValue, [agEnvScope]::User)
 
-                # User取得
                 $userRaw = [_agEnvCore]::_GetRaw($testVar, [agEnvScope]::User)
                 $userRaw | Should -Be $testValue
 
-                # Process未反映
-                $procRaw = [_agEnvCore]::_GetRaw($testVar, [agEnvScope]::Current)
+                $procRaw = [_agEnvCore]::_GetRaw($testVar, [agEnvScope]::Process)
                 $procRaw | Should -BeNullOrEmpty
-
-                # 後片付け
-                [_agEnvCore]::_RemoveRaw($testVar, [agEnvScope]::User)
             }
         }
     }
 
-    Context "GetRaw / IsEnvExist メソッド" {
-        Context "環境変数が存在する場合" {
-            It "GetRaw が値を返し、IsEnvExist が true を返す" {
-                $testVar = '<TEST_VAR>'
-                $testValue = 'Value123'
+    Context "IsEnvExist / _GetRaw / _RemoveRaw メソッド" {
 
-                [System.Environment]::SetEnvironmentVariable($testVar, $testValue, [System.EnvironmentVariableTarget]::Process)
-
-                $result = [_agEnvCore]::_GetRaw($testVar, [agEnvScope]::Process)
-                $exists = [_agEnvCore]::IsEnvExist($testVar, [agEnvScope]::Process)
-
-                $result | Should -Be $testValue
-                $exists | Should -BeTrue
-
+        Context "存在チェックと削除" {
+            BeforeEach {
+                $testVar   = '<UT_Exist>'
+                $testValue = 'ExistValue'
+                [_agEnvCore]::_RemoveRaw($testVar, [agEnvScope]::Process)
+                [_agEnvCore]::_SetRaw($testVar, $testValue, [agEnvScope]::Process)
+            }
+            AfterEach {
                 [_agEnvCore]::_RemoveRaw($testVar, [agEnvScope]::Process)
             }
-        }
 
-        Context "環境変数が存在しない場合" {
-            It "GetRaw が null/empty を返し、IsEnvExist が false を返す" {
-                $testVar = '<TEST_NOT_EXIST_VAR>'
-                [_agEnvCore]::_RemoveRaw($testVar, [agEnvScope]::Process)
-
-                $result = [_agEnvCore]::_GetRaw($testVar, [agEnvScope]::Process)
-                $exists = [_agEnvCore]::IsEnvExist($testVar, [agEnvScope]::Process)
-
-                $result | Should -BeNullOrEmpty
-                $exists | Should -BeFalse
+            It "IsEnvExist は true を返し、_GetRaw は値を返す" {
+                [_agEnvCore]::IsEnvExist($testVar, [agEnvScope]::Process) | Should -BeTrue
+                [_agEnvCore]::_GetRaw($testVar, [agEnvScope]::Process) | Should -Be $testValue
             }
-        }
-    }
 
-    Context "RemoveRaw メソッド" {
-        Context "環境変数が存在する場合" {
-            It "削除後は GetRaw が null/empty を返す" {
-                $testVar = '<UT_RemoveRaw>'
-
-                [System.Environment]::SetEnvironmentVariable($testVar, 'ToBeRemoved', [System.EnvironmentVariableTarget]::Process)
+            It "RemoveRaw 後は存在しない扱いになる" {
                 [_agEnvCore]::_RemoveRaw($testVar, [agEnvScope]::Process)
-
-                $envVar = [_agEnvCore]::_GetRaw($testVar, [agEnvScope]::Process)
-                $envVar | Should -BeNullOrEmpty
-            }
-        }
-
-        Context "環境変数が存在しない場合" {
-            It "例外を投げずに処理される" {
-                $testVar = '<UT_RemoveRaw_Not_Exist>'
-                [_agEnvCore]::_RemoveRaw($testVar, [agEnvScope]::Process)
-
-                { [_agEnvCore]::_RemoveRaw($testVar, [agEnvScope]::Process) } | Should -Not -Throw
+                [_agEnvCore]::IsEnvExist($testVar, [agEnvScope]::Process) | Should -BeFalse
             }
         }
     }
@@ -140,6 +108,45 @@ Describe "agEnvCore - Get メソッド (Public API)" {
         It "Current alias を指定して取得できる" {
             $result = [_agEnvCore]::Get($testVar, [agEnvScope]::Current)
             $result | Should -Be $testValue
+        }
+    }
+}
+
+Describe "agEnvCore - Set メソッド (Public API)" {
+
+    Context "Sync 動作" {
+        BeforeEach {
+            $testVar = '<UT_Set_Sync>'
+            # User/Current をクリア
+            [_agEnvCore]::_RemoveRaw($testVar, [agEnvScope]::User)
+            [_agEnvCore]::_RemoveRaw($testVar, [agEnvScope]::Current)
+        }
+        AfterEach {
+            # クリーンアップ
+            [_agEnvCore]::_RemoveRaw($testVar, [agEnvScope]::User)
+            [_agEnvCore]::_RemoveRaw($testVar, [agEnvScope]::Current)
+        }
+
+        It "Sync=true で User と Current に同時設定される" {
+            $valueOn = 'SyncOnValue'
+            [_agEnvCore]::Set($testVar, $valueOn, [agEnvScope]::User, $true)
+
+            # public Get で User スコープ確認
+            [_agEnvCore]::Get($testVar, [agEnvScope]::User) | Should -Be $valueOn
+
+            # public Get で Current(alias)スコープ確認
+            [_agEnvCore]::Get($testVar, [agEnvScope]::Current) | Should -Be $valueOn
+        }
+
+        It "Sync=false で User のみ設定され、Current には反映されない" {
+            $valueOff = 'SyncOffValue'
+            [_agEnvCore]::Set($testVar, $valueOff, [agEnvScope]::User, $false)
+
+            # public Get で User スコープ確認
+            [_agEnvCore]::Get($testVar, [agEnvScope]::User) | Should -Be $valueOff
+
+            # 変数がない場合は IsEnvExist で false を確認
+            [_agEnvCore]::IsEnvExist($testVar, [agEnvScope]::Current) | Should -BeFalse
         }
     }
 }

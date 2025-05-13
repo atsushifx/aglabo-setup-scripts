@@ -37,6 +37,34 @@ class _agEnvCore {
     # ----------------
     # public method
     # ----------------
+
+    <#
+    .SYNOPSIS
+    Sets an environment variable in the specified scope and optionally syncs to Current.
+    .DESCRIPTION
+    Uses `_SetRaw` to set in the given User or Machine scope.
+    If `$Sync` is `$true` and scope is not Current, also sets in Current (Process).
+    .PARAMETER Name
+    The name of the environment variable.
+    .PARAMETER Value
+    The value to assign.
+    .PARAMETER Scope
+    The scope ([agEnvScope] enum) in which to set the variable.
+    Defaults to [agEnvScope]::User.
+    .PARAMETER Sync
+    If `$true` (default), also sets in Current (Process) when scope is not Current.
+    #>
+    static [void] Set(
+        [string] $Name,
+        [string] $Value,
+        [agEnvScope] $Scope = [agEnvScope]::User,
+        [bool] $Sync = $On
+    ) {
+        [ _agEnvCore ]::_SetRaw($Name, $Value, $Scope)
+        if ($Sync -and ($Scope -ne [agEnvScope]::Current)) {
+            [ _agEnvCore ]::_SetRaw($Name, $Value, [agEnvScope]::Current)
+        }
+    }
     <#
     .SYNOPSIS
     Retrieves an environment variable value (defaults to Current scope).
